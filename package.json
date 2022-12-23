@@ -1,6 +1,10 @@
 {
   "name": "wagmi-contracts",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
+  "repository": {
+    "url": "https://github.com/K-NRS/wagmi-contracts",
+    "type": "git"
+  },
   "author": {
     "email": "kerem@noras.tech",
     "name": "Kerem Noras"

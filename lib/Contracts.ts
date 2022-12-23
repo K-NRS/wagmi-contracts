@@ -30,7 +30,14 @@ interface ICreateContractHooks {
 export const createContractHooks = ({
   contracts,
   wagmiClient,
-}: ICreateContractHooks) => {
+}: ICreateContractHooks): {
+  useContract: any
+  useContractEvent: any
+  useContractRead: any
+  useContractReads: any
+  useContractWrite: any
+  useToken: any
+} => {
   let currentNetwork = wagmiClient.provider.network.name
   let networkContracts = contracts[currentNetwork]
   wagmiClient.provider.on("network", (newNetwork: any, oldNetwork: any) => {

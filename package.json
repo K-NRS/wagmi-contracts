@@ -1,6 +1,6 @@
 {
   "name": "wagmi-contracts",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.1+001",
   "repository": {
     "url": "https://github.com/K-NRS/wagmi-contracts",
     "type": "git"
@@ -17,7 +17,7 @@
   "license": "MIT",
   "main": "dist/Contracts.js",
   "scripts": {
-    "build": "tsc --outDir dist"
+    "build": "tsc --declaration --outDir dist"
   },
   "peerDependencies": {
     "ethers": "^5.7.2",

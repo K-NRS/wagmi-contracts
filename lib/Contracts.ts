@@ -1,4 +1,4 @@
-import { Signer } from "ethers"
+import { Signer } from 'ethers'
 import {
   useContract as useWagmiContract,
   useContractEvent as useWagmiContractEvent,
@@ -8,9 +8,18 @@ import {
   useContractWrite as useWagmiContractWrite,
   usePrepareContractWrite,
   useToken as useWagmiToken,
-} from "wagmi"
+} from 'wagmi'
 
-import { Provider } from "@wagmi/core"
+import {
+  Provider,
+  getContract as getContractWagmi,
+  readContract as readContractWagmi,
+  readContracts as readContractsWagmi,
+  prepareWriteContract,
+  writeContract as writeContractWagmi,
+  watchReadContract as watchReadContractWagmi,
+  watchReadContracts as watchReadContractsWagmi,
+} from '@wagmi/core'
 
 interface IContract {
   abi: any
@@ -31,24 +40,137 @@ export const createContractHooks = ({
   contracts,
   wagmiClient,
 }: ICreateContractHooks): {
-  useContract: any
-  useContractEvent: any
-  useContractRead: any
-  useContractReads: any
-  useContractWrite: any
-  useToken: any
+  functions: any,
+  hooks: any
 } => {
   let currentNetwork = wagmiClient.provider.network.name
   let networkContracts = contracts[currentNetwork]
-  wagmiClient.provider.on("network", (newNetwork: any, oldNetwork: any) => {
+  wagmiClient.provider.on('network', (newNetwork: any) => {
     currentNetwork = newNetwork.name
     networkContracts = contracts[currentNetwork]
   })
 
+  const functions = {
+    getContract: (
+      contractName: string,
+      signerOrProvider?: Signer | Provider,
+    ): ReturnType<typeof getContractWagmi> => {
+      const contract = networkContracts[contractName]
+      const args = {
+        abi: contract.abi,
+        address: contract.address,
+      }
+
+      return getContractWagmi(
+        signerOrProvider ? Object.assign(args, { signerOrProvider }) : args,
+      )
+    },
+    readContract: (
+      contractName: string,
+      functionName: string,
+      ...optionalArgs: Partial<Parameters<typeof readContractWagmi>>
+    ) => {
+      const contract = networkContracts[contractName]
+
+      return readContractWagmi({
+        abi: contract.abi,
+        address: contract.address,
+
+        functionName,
+        ...optionalArgs,
+      })
+    },
+    readContracts: (params: {
+      [contractName: string]: {
+        functionName: string
+      } & Partial<Parameters<typeof readContractsWagmi>>
+    }) => {
+      const converted = Object.entries(params).reduce(
+        (acc, [contractName, { functionName, ...optionalArgs }]) => {
+          const contract = networkContracts[contractName]
+          acc.push({
+            ...optionalArgs,
+            abi: contract.abi,
+            address: contract.address,
+            functionName,
+          })
+          return acc
+        },
+        [] as any,
+      )
+
+      return readContractsWagmi(converted)
+    },
+    writeContract: async (
+      contractName: string,
+      functionName: string,
+      ...optionalArgs: Partial<Parameters<typeof writeContractWagmi>>
+    ) => {
+      const contract = networkContracts[contractName]
+      const config = await prepareWriteContract({
+        ...optionalArgs,
+        abi: contract.abi,
+        address: contract.address,
+        functionName,
+      })
+
+      return writeContractWagmi(config)
+    },
+    watchReadContract: (
+      contractName: string,
+      functionName: string,
+      listener: (...args: any[]) => void,
+      ...optionalArgs: Partial<Parameters<typeof watchReadContractWagmi>>
+    ) => {
+      const contract = networkContracts[contractName]
+
+      return watchReadContractWagmi(
+        {
+          ...optionalArgs,
+          abi: contract.abi,
+          address: contract.address,
+          functionName,
+        },
+        listener,
+      )
+    },
+    watchReadContracts: (
+      params: {
+        [contractName: string]: {
+          functionName: string
+          args?: any
+          chainId?: number
+        } & Partial<Parameters<typeof watchReadContractsWagmi>>
+      },
+      listener: (...args: any[]) => void,
+    ) => {
+      const converted = Object.entries(params).reduce(
+        (acc, [contractName, { functionName, ...optionalArgs }]) => {
+          const contract = networkContracts[contractName]
+          acc.push({
+            ...optionalArgs,
+            abi: contract.abi,
+            address: contract.address,
+            functionName,
+          })
+          return acc
+        },
+        [] as any,
+      )
+
+      return watchReadContractsWagmi(
+        {
+          contracts: converted,
+        },
+        listener,
+      )
+    },
+  }
+
   const hooks = {
     useContract: (
       contractName: string,
-      signerOrProvider?: Signer | Provider
+      signerOrProvider?: Signer | Provider,
     ): ReturnType<typeof useWagmiContract> => {
       const contract = networkContracts[contractName]
       const args = {
@@ -57,14 +179,14 @@ export const createContractHooks = ({
       }
 
       return useWagmiContract(
-        signerOrProvider ? Object.assign(args, { signerOrProvider }) : args
+        signerOrProvider ? Object.assign(args, { signerOrProvider }) : args,
       )
     },
     useContractEvent: (
       contractName: string,
       eventName: string,
       listener: (...args: any[]) => void,
-      optionalArgs?: Parameters<typeof useWagmiContractEvent>
+      optionalArgs?: Parameters<typeof useWagmiContractEvent>,
     ): ReturnType<typeof useWagmiContractEvent> => {
       const contract = networkContracts[contractName]
       return useWagmiContractEvent({
@@ -104,7 +226,7 @@ export const createContractHooks = ({
           })
           return acc
         },
-        [] as any
+        [] as any,
       )
 
       return useWagmiContractReads(converted)
@@ -136,7 +258,7 @@ export const createContractHooks = ({
           }
           return acc
         },
-        {} as any
+        {} as any,
       )
 
       const token = tokens[tokenName]
@@ -148,5 +270,5 @@ export const createContractHooks = ({
     },
   }
 
-  return hooks
+  return { functions, hooks }
 }

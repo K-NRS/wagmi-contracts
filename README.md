@@ -1,5 +1,7 @@
 # wagmi-contracts
 
+![GitHub Repo stars](https://img.shields.io/github/stars/K-NRS/wagmi-contracts?label=Github&style=social)
+
 The library abstracts wagmi's hooks to access contracts by their names easily. So, you won't have to call hooks with address and abi every time.
 
 ## Usage
